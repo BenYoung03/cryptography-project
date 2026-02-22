@@ -1,2 +1,5 @@
 ## API/.env not ignored!! this is on-purpose as we should not be harbouring any secrets in it as it is used for server config.
 ## should not be doing any cryptographic functions on server anyways, leave it to the frontend.
+.vscode
+API/src/__pycache__
+.python-version
