@@ -1,0 +1,1 @@
+Make sure your using a python 3.12.12 virtual environment for development and installing its packages from the requirements (none so far)
