@@ -1,0 +1,29 @@
+services:
+    web:
+        build: .
+        container_name: cyllenian
+        ports: [8000:8000]
+        environment:
+            - REDIS_URL=redis:://redis:6379
+            - PYTHONDONTWRITEBYTECODE=1
+        depends_on:
+            - redis
+        networks:
+            - backend
+
+    ## DB service, linked up to its data volume for persistent storage, and the docker network
+    redis:
+        image: redis:8.6
+        container_name: redis
+        volumes:
+            - redis_data:/data
+        networks:
+            - backend
+
+## DB data storage
+volumes:
+    redis_data:
+
+## Network for inter-service communication
+networks:
+    backend:
