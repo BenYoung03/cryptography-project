@@ -3,6 +3,15 @@ from asyncio import Lock
 from .models import wsMessage
 
 class ConnectionManager:
+    """ Manages WebSocket Connections, indexed on clients provided uid
+
+    Parameters
+    ----------
+        connections : dict{uid, websocket}
+            Where all the connections are stored
+        lock : asyncio.Lock()
+            Provides locking for editing the connections dictionary
+    """
     def __init__(self):
         self.connections = {}
         self.lock = Lock()
@@ -13,8 +22,8 @@ class ConnectionManager:
         async with self.lock:
             self.connections[uid] = ws
     
-    async def disconnect(self, ws: WebSocket, uid: str): 
-        async with self.lock: self.connections[uid] = ws
+    async def disconnect(self, uid: str): 
+        async with self.lock: self.connections.pop(uid, None)
 
     async def send_to_user(self, uid: str, msg: wsMessage):
         async with self.lock: 
