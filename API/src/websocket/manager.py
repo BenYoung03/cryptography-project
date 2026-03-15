@@ -1,6 +1,6 @@
 from fastapi import WebSocket
 from asyncio import Lock
-from .models import wsMessage
+from ..models.ws import wsMessage
 
 class ConnectionManager:
     """ Manages WebSocket Connections, indexed on clients provided uid
@@ -31,5 +31,5 @@ class ConnectionManager:
             ws=self.connections.get(uid)
 
         if ws:
-            await ws.send_json(msg)
+            await ws.send_json(msg.model_dump_json())
 
