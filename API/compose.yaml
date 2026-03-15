@@ -13,7 +13,7 @@ services:
 
     ## DB service, linked up to its data volume for persistent storage, and the docker network
     redis:
-        image: redis:8.6
+        image: redis:8.6-alpine
         container_name: redis
         volumes:
             - redis_data:/data
