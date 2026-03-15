@@ -1,4 +1,11 @@
 from pydantic import BaseModel
+from enum import Enum
+
+class Status(Enum):
+    SENT = "sent"
+    READ = "read"
+    DELETED = "deleted"
+
 
 class CipherText(BaseModel):
     ciphertext: str
@@ -12,7 +19,7 @@ class Key(BaseModel):
 class HMAC(BaseModel):
     string: str
 
-class msg(BaseModel):
+class Msg(BaseModel):
 ## Routing Data
     msg_id: str
     sender_uid: str
@@ -23,6 +30,10 @@ class msg(BaseModel):
     hmac: HMAC
 
 ## Metadata
-    status: str
+    status: Status
     timestamp: int
     server_timestamp: int
+
+class Update(BaseModel):
+    msg_id: str
+    status: Status
