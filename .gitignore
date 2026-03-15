@@ -3,3 +3,4 @@
 .vscode
 API/src/__pycache__
 .python-version
+/API/.env
