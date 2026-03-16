@@ -1,5 +1,5 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
-import asyncio
+import logging
 
 ## Backend Managers and DB
 from ..redis_db.redis import redis_client as r
@@ -8,7 +8,7 @@ from .manager import ConnectionManager
 
 ## Data Models
 from ..models.ws import wsMessage, wsError
-from ..models.msg import Msg, Update
+from ..models.msg import Msg, Update, Status
 from ..models.redisEvents import RedisEvent
 
 ## utility functions
@@ -18,6 +18,9 @@ from ..middleware.auth import get_uid
 router = APIRouter()
 manager = ConnectionManager()
 
+log = logging.getLogger("uvicorn.error")
+log.setLevel(logging.DEBUG)
+
 @router.websocket("/ws")
 async def ws_endpoint(ws: WebSocket):
     uid = ws.state.uid
@@ -25,31 +28,66 @@ async def ws_endpoint(ws: WebSocket):
 
     try:
         while True:
-            data = await ws.receive_json()
-            
-            message = wsMessage(
-                type=data["type"],
-                payload=data["payload"]
-            )
+            try:
+                data = await ws.receive_json()
+                
+                message = wsMessage(
+                    type=data["type"],
+                    payload=data["payload"]
+                )
+            except:
+                await manager.send_to_user(uid, wsMessage(type="error", payload=wsError(
+                    error_type="invalid-format", 
+                    error_msg="wsMessage has an invalid format"
+                )))
+                continue
+
+            log.debug("[WS] ws payload: %s", message.payload.model_dump_json(indent=2))
+
 
             if message.type == "msg":
-                message.payload = Msg(**message.payload)
                 message.payload.msg_id = generate_id("m")
+                message.payload.status = Status.READ
+                """try:
+                    message.payload = Msg(**message.payload)
+                except Exception as e:
+                    log.debug("[WS] error parsing %s", repr(e))
+                    await manager.send_to_user(uid, wsMessage(type="error", payload=wsError(
+                        error_type="invalid-format", 
+                        error_msg="message payload has an invalid format"
+                    )))
+                    continue"""
+
                 await msgCRUD.store_message(message.payload)
 
             elif message.type == "update":
-                message.payload = Update(**message.payload)
+                """try:
+                    message.payload = Update(**message.payload)
+                except:
+                    await manager.send_to_user(uid, wsMessage(type="error", payload=wsError(
+                        error_type="invalid-format", 
+                        error_msg="message payload has an invalid format"
+                    )))
+                    continue"""
+
                 if await msgCRUD.get_msg_recipient(message.payload.msg_id) != uid: 
-                    asyncio.create_task(manager.send_to_user(uid, wsMessage("error", wsError("no-access", "message does not belong to client"))))
+                    await manager.send_to_user(uid, wsMessage(type="error", payload=wsError(
+                        error_type="no-access", 
+                        error_msg="message does not belong to client"
+                    )))
                     continue
+
                 if await msgCRUD.update_message_status(message.payload) == -1:
-                    asyncio.create_task(manager.send_to_user(uid, wsMessage("error", wsError("invalid-update", "Attempted update not valid for message state"))))
+                    await manager.send_to_user(uid, wsMessage("error", payload=wsError(
+                        error_type="invalid-update", 
+                        error_msg="Attempted update not valid for message state"
+                    )))
                     continue
 
             await r.publish(
                 "ws_events",
-                RedisEvent(message.type, message.payload.msg_id)
+                RedisEvent(type=message.type, msg_id=message.payload.msg_id).model_dump_json()
             )
         
-    except WebSocketDisconnect:
+    finally:
         await manager.disconnect(uid)
