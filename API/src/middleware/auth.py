@@ -6,7 +6,6 @@ import logging
 ## @BEN put auth function import here; use relative importing (..->go one path down): import auth_user
 
 log = logging.getLogger("uvicorn.error")
-log.setLevel(logging.INFO)
 
 async def auth_user(uid: str, jwt: str):
     return True ## @BEN delete this instead use import

@@ -1,6 +1,10 @@
 from ..models.msg import Msg, Update, Status, CipherText, Key
 from .redis import redis_client as r
 import time
+import logging
+import json
+
+log = logging.getLogger("uvicorn.error")
 
 async def get_msg_recipient(msg_id: str):
     return await r.hget(f"msg:{msg_id}", "recipient_uid")
@@ -45,6 +49,7 @@ async def null_message(msg_id, ts = time.time()):
     )
 
 async def store_message(msg: Msg):
+    log.debug("[REDIS] storing MSG_ID: %s, from UID: %s, to UID: %s", msg.msg_id, msg.sender_uid, msg.recipient_uid)
     ts = time.time() ## ADD SERVER TIMESTAMP HERE
     
     res = await r.hset(
@@ -55,7 +60,7 @@ async def store_message(msg: Msg):
             "recipient_uid": msg.recipient_uid,
 
             "ciphertext": msg.ciphertext.ciphertext,
-            "iv": msg.ciphertext.IV,
+            "IV": msg.ciphertext.IV,
             "tag": msg.ciphertext.tag or "",
 
             "algorithm": msg.key.algorithm,
@@ -72,39 +77,46 @@ async def store_message(msg: Msg):
     await r.zadd(f"user_msgs:{msg.sender_uid}", {msg.msg_id: ts})
     await r.zadd(f"user_msgs:{msg.recipient_uid}", {msg.msg_id: ts})
 
+    log.debug("[REDIS] SUCCESS stored MSG_ID: %s", msg.msg_id)
     return res
 
-async def get_message(msg_id: str) -> Msg | None:
+async def get_message(msg_id: str) -> Msg:
+    log.debug("[REDIS] getting MSG_ID: %s", msg_id)
     data = await r.hgetall(f"msg:{msg_id}")
 
     if not data:
-        return None
+        raise LookupError(f"Could not find MSG_ID: {msg_id}")
     
-    return Msg(
+    msg = Msg(
         msg_id=data["msg_id"],
         sender_uid=data["sender_uid"],
         recipient_uid=data["recipient_uid"],
         ciphertext=CipherText(
-            ciphertext=data["ciphertext"],
-            IV=data["iv"],
-            tag=data["tag"] or None
+            ciphertext=data["ciphertext"], 
+            IV=data["IV"], 
+            tag=data["tag"]
         ),
         key=Key(
-            algorithm=data["algorithm"],
-            encrypted_key=data["key"]
+            algorithm=data["algorithm"], 
+            encrypted_key=data["encrypted_key"]
         ),
-        status=Status(data["status"]),
+        status=Status(int(data["status"])),
         timestamp=int(data["timestamp"]),
-        ttl=data["ttl"],
-        server_timestamp=int(data["server_timestamp"])
+        ttl=int(data["ttl"]),
+        server_timestamp=int(float(data["server_timestamp"])) or None
     )
+    log.debug("[REDIS] SUCCESS retrieved MSG_ID: %s:\n%s", msg_id, msg.model_dump_json(indent=2))
+    return msg
 
 async def get_status(msg_id: str) -> Update | None:
+    log.debug("[REDIS] getting MSG_ID: %s status", msg_id)
     status = await r.hget(f"msg:{msg_id}")
 
     if not status:
+        log.debug("[REDIS] FAIL getting MSG_ID: %s status", msg_id)
         return None
     
+    log.debug("[REDIS] SUCCESS MSG_ID: %s status", msg_id)
     return Update(msg_id=msg_id, status=status)
 
 async def get_messages_since(uid: str, ts: int):

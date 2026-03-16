@@ -1,20 +1,26 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 import asyncio
+import logging
+from os import getenv
 from .api.routes import router as apiRouter
 from .websocket.ws import router as wsRouter, manager as wsManager
 from .redis_db.subpub import redis_listener, init_manager
 from .middleware.auth import AuthMiddleware
 
+LOGLEVEL = getenv('LOGLEVEL') or "INFO"
+log = logging.getLogger("uvicorn.error")
+log.setLevel(LOGLEVEL)
+
 ## redis event sub-pub init and connection manager init
 init_manager(wsManager)
-asyncio.create_task(redis_listener()) ## spin up listener task
 
 ## lifespan manager
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    ## startup code
+    redis_task = asyncio.create_task(redis_listener()) ## spin up listener task
     yield
+    redis_task.cancel()
     for uid, ws in list(wsManager.connections.items()):
         try:
             await ws.close()

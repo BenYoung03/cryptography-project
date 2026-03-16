@@ -2,6 +2,9 @@ from fastapi import WebSocket
 from asyncio import Lock
 from ..models.ws import wsMessage
 import weakref
+import logging
+
+log = logging.getLogger("uvicorn.error")
 
 class ConnectionManager:
     """ Manages WebSocket Connections, indexed on clients provided uid
@@ -24,12 +27,11 @@ class ConnectionManager:
             self.connections[uid] = ws
     
     async def disconnect(self, uid: str): 
-        async with self.lock: 
+        async with self.lock:
             ws = self.connections.pop(uid, None)
-        if ws:
-            await ws.close()
 
     async def send_to_user(self, uid: str, msg: wsMessage):
+        log.debug("[WS-MANAGER] sending to UID: %s, MSG:\n%s", uid, msg.model_dump_json(indent=2))
         async with self.lock: 
             ws: WebSocket
             ws=self.connections.get(uid)
