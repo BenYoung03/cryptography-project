@@ -37,8 +37,6 @@ async def redis_listener():
             log.debug("[REDIS-EVENT] of type MSG")
             try:
                 msg = await get_message(event.msg_id)
-                log.debug("left get message")
-                if not msg: raise ValueError(f"MSG_ID: {event.msg_id} returned none")
             except Exception as e:
                 log.debug("[REDIS-EVENT] failed to get MSG_ID: %s, error:\n%s", event.msg_id, repr(e))
                 continue
