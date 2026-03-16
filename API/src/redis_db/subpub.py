@@ -1,5 +1,9 @@
 from .redis import redis_client as r
 from ..websocket.manager import ConnectionManager
+from .msg import get_message, get_status
+from ..models.redisEvents import RedisEvent, EventType
+from ..models.ws import wsMessage
+from ..models.msg import Msg, Update
 import json
 
 manager: ConnectionManager = None
@@ -13,11 +17,23 @@ async def redis_listener():
 
     await pubsub.subscribe("ws_events")
 
-    async for message in pubsub.listen():
-        if message["type"] != "message":
+    async for data in pubsub.listen():
+        data = RedisEvent(**data)
+
+        if data["type"] == EventType.NEW_MESSAGE.value:
+            msg = get_message(data.msg_id)
+            if not update: 
+                continue
+            
+            await manager.send_to_user(msg.recipient_uid, wsMessage(data.type, msg))
+            
+        elif data["type"] == EventType.STATUS_UPDATE.value:
+            update = get_status(data.msg_id)
+            if not update: 
+                continue
+
+            await manager.send_to_user(update.sender_uid, wsMessage(data.type, update))
+            await manager.send_to_user(update.recipient_uid, wsMessage(data.type, update))
+            
+        else:
             continue
-
-        data = json.loads(message["data"])
-        uid = data["recipient_uid"]
-
-        await manager.send_to_user(uid, data)
