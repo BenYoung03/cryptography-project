@@ -7,14 +7,13 @@ async def get_msg_recipient(msg_id: str):
 
 async def update_message_status(update: Update):
     ts = time.time()
-    msg = r.hgetall(f"msg:{update.msg_id}")
-    cur_status = msg["status"]
-    sender = msg["sender_id"]
+    msg: Msg
+    msg = get_message(update.msg_id)
 
     res = -1
-    if cur_status==Status.DELETED.value: 
+    if msg.status.value==Status.DELETED.value: 
         res = await null_message(update.msg_id, ts)
-    elif update.status.value<=int(cur_status):
+    elif update.status.value<=msg.status.value:
         return res
     else:
         res = await r.hset(
@@ -24,7 +23,8 @@ async def update_message_status(update: Update):
                 "server_timestamp": ts
             }
         )
-    await r.zadd(f"user_msgs:{sender}", {update.msg_id: ts})
+    await r.zadd(f"user_updates:{msg.recipient_uid}", {update.msg_id: ts})
+    await r.zadd(f"user_updates:{msg.sender_uid}", {update.msg_id: ts})
 
 async def null_message(msg_id, ts = time.time()):
     return await r.hset(
@@ -50,6 +50,7 @@ async def store_message(msg: Msg):
     res = await r.hset(
         f"msg:{msg.msg_id}",
         mapping={
+            "msg_id": msg.msg_id,
             "sender_uid": msg.sender_uid,
             "recipient_uid": msg.recipient_uid,
 
@@ -98,6 +99,14 @@ async def get_message(msg_id: str) -> Msg | None:
         server_timestamp=int(data["server_timestamp"])
     )
 
+async def get_status(msg_id: str) -> Update | None:
+    status = await r.hget(f"msg:{msg_id}")
+
+    if not status:
+        return None
+    
+    return Update(msg_id=msg_id, status=status)
+
 async def get_messages_since(uid: str, ts: int):
     msg_ids = await r.zrangebyscore(
         f"user_msgs:{uid}",
@@ -113,3 +122,18 @@ async def get_messages_since(uid: str, ts: int):
             messages.append(msg)
 
     return messages
+
+async def get_updates_since(uid: str, ts: int):
+    msg_ids = await r.zrangebyscore(
+        f"user_updates:{uid}",
+        ts,
+        "+inf"
+    )
+
+    updates = []
+    for mid in msg_ids:
+        status = get_status(mid)
+        if status:
+            updates.append(status)
+
+    return updates
