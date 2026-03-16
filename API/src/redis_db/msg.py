@@ -69,8 +69,8 @@ async def store_message(msg: Msg):
         },
     )
 
-    await r.zadd(f"user_msgs:{msg.sender_id}", {msg.msg_id: ts})
-    await r.zadd(f"user_msgs:{msg.receiver_id}", {msg.msg_id: ts})
+    await r.zadd(f"user_msgs:{msg.sender_uid}", {msg.msg_id: ts})
+    await r.zadd(f"user_msgs:{msg.recipient_uid}", {msg.msg_id: ts})
 
     return res
 
