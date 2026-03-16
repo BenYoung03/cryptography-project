@@ -9,6 +9,7 @@ from .manager import ConnectionManager
 ## Data Models
 from ..models.ws import wsMessage, wsError
 from ..models.msg import Msg, Update
+from ..models.redisEvents import RedisEvent
 
 ## utility functions
 from ..utils.ulid import generate_id
@@ -37,13 +38,17 @@ async def ws_endpoint(ws: WebSocket, uid: str = Depends(get_uid)):
 
             elif message.type == "update":
                 message.payload = Update(**message.payload)
-                if msgCRUD.get_msg_recipient(message.payload.msg_id) != uid: 
+                if await msgCRUD.get_msg_recipient(message.payload.msg_id) != uid: 
                     asyncio.create_task(manager.send_to_user(uid, wsMessage("error", wsError("no-access", "message does not belong to client"))))
                     continue
-                msgCRUD.update_message_status(message.payload)
+                if await msgCRUD.update_message_status(message.payload) == -1:
+                    asyncio.create_task(manager.send_to_user(uid, wsMessage("error", wsError("invalid-update", "Attempted update not valid for message state"))))
+                    continue
+
             await r.publish(
                 "ws_events",
-                message.model_dump_json()
+                RedisEvent(message.type, message.payload.msg_id)
             )
+        
     except WebSocketDisconnect:
         await manager.disconnect(uid)
