@@ -63,15 +63,6 @@ async def ws_endpoint(ws: WebSocket):
             if message.type == wsType.MSG:
                 message.payload.msg_id = generate_id("m")
                 message.payload.status = Status.READ
-                """try:
-                    message.payload = Msg(**message.payload)
-                except Exception as e:
-                    log.debug("[WS] error parsing %s", repr(e))
-                    await manager.send_to_user(uid, wsMessage(type="error", payload=wsError(
-                        error_type="invalid-format", 
-                        error_msg="message payload has an invalid format"
-                    )))
-                    continue"""
 
                 await msgCRUD.store_message(message.payload)
                 await manager.send_to_user(uid, wsMessage(type=wsType.RESPONSE, payload=wsResponse(
@@ -81,15 +72,6 @@ async def ws_endpoint(ws: WebSocket):
                 )))
 
             elif message.type == wsType.UPDATE:
-                """try:
-                    message.payload = Update(**message.payload)
-                except:
-                    await manager.send_to_user(uid, wsMessage(type="error", payload=wsError(
-                        error_type="invalid-format", 
-                        error_msg="message payload has an invalid format"
-                    )))
-                    continue"""
-
                 if await msgCRUD.get_msg_recipient(message.payload.msg_id) != uid: 
                     await manager.send_to_user(uid, wsMessage(type=wsType.ERROR, payload=wsError(
                         error_type="no-access", 
