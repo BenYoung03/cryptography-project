@@ -7,11 +7,11 @@ class wsType(str, Enum):
     UPDATE = "update"
     ERROR = "error"
 
-class wsMessage(BaseModel):
-    type: wsType
-    payload: Msg | Update
-
 class wsError(BaseModel):
     error_type: str
     error_msg: str
     metadata: dict | None = None
+
+class wsMessage(BaseModel):
+    type: wsType
+    payload: Msg | Update | wsError
