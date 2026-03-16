@@ -1,6 +1,7 @@
 from fastapi import WebSocket
 from asyncio import Lock
 from ..models.ws import wsMessage
+import weakref
 
 class ConnectionManager:
     """ Manages WebSocket Connections, indexed on clients provided uid
@@ -13,7 +14,7 @@ class ConnectionManager:
             Provides locking for editing the connections dictionary
     """
     def __init__(self):
-        self.connections = {}
+        self.connections = weakref.WeakValueDictionary()
         self.lock = Lock()
     
     async def connect(self, ws: WebSocket, uid: str):
@@ -23,13 +24,16 @@ class ConnectionManager:
             self.connections[uid] = ws
     
     async def disconnect(self, uid: str): 
-        async with self.lock: self.connections.pop(uid, None)
+        async with self.lock: 
+            ws = self.connections.pop(uid, None)
+        if ws:
+            await ws.close()
 
     async def send_to_user(self, uid: str, msg: wsMessage):
         async with self.lock: 
             ws: WebSocket
             ws=self.connections.get(uid)
+            if ws:
+                await ws.send_json(msg.model_dump_json())
 
-        if ws:
-            await ws.send_json(msg.model_dump_json())
 
