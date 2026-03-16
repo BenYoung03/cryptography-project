@@ -7,6 +7,7 @@ from .api.routes import router as apiRouter
 from .websocket.ws import router as wsRouter, manager as wsManager
 from .redis_db.subpub import redis_listener, init_manager
 from .middleware.auth import AuthMiddleware
+from .uauth.firebase import initialize_firebase
 
 LOGLEVEL = getenv('LOGLEVEL') or "INFO"
 log = logging.getLogger("uvicorn.error")
@@ -18,6 +19,9 @@ init_manager(wsManager)
 ## lifespan manager
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+
+    initialize_firebase()
+
     redis_task = asyncio.create_task(redis_listener()) ## spin up listener task
     yield
     redis_task.cancel()
