@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request, Header
 from fastapi.responses import JSONResponse
 from ..redis_db import user
 from ..redis_db import msg
@@ -8,19 +8,13 @@ import time
 
 router = APIRouter()
 
-"""
-@router.get("/msg")
-async def get_msg_test(msg: str):
-    await write_msg(msg)
-    return await read_msg()
+async def required_headers(x_uid: str = Header(...), x_jwt: str = Header(...)):
+    # This dependency is just for docs
+    return {"uid": x_uid, "jwt": x_jwt}
 
-@router.get("/msg/read")
-async def get_msg_read():
-    return await read_msg()
-"""
-
-@router.get("/rsa")
-async def get_rsa_pub(uid: str = Depends(get_uid)):
+@router.get("/rsa", dependencies=[Depends(get_uid), Depends(required_headers)])
+async def get_rsa_pub(request: Request):
+    uid = request.state.uid
     res = await user.get_user_rsa(uid)
     if res == None:
         return JSONResponse(status_code=404, content={"error": "uid does not have associated public key"})
