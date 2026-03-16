@@ -1,10 +1,11 @@
 from pydantic import BaseModel
 from enum import Enum
 
-class Status(str, Enum):
-    SENT = "sent"
-    READ = "read"
-    DELETED = "deleted"
+class Status(Enum):
+    SENT =      0
+    DELIVERED = 1
+    READ =      2
+    DELETED =   4
 
 
 class CipherText(BaseModel):
