@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from contextlib import asynccontextmanager
 import asyncio
 from .api.routes import router as apiRouter
 from .websocket.ws import router as wsRouter, manager as wsManager
@@ -9,8 +10,20 @@ from .middleware.auth import AuthMiddleware
 init_manager(wsManager)
 asyncio.create_task(redis_listener()) ## spin up listener task
 
+## lifespan manager
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    ## startup code
+    yield
+    for uid, ws in list(wsManager.connections.items()):
+        try:
+            await ws.close()
+        except:
+            pass
+    wsManager.connections.clear()
+
 ## app and router init
-app = FastAPI(title="Cyllenian Web Backend")
+app = FastAPI(title="Cyllenian Web Backend", lifespan=lifespan)
 
 app.add_middleware(AuthMiddleware)
 
