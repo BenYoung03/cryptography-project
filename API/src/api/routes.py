@@ -35,8 +35,11 @@ async def post_rsa_pub(uid: str, rsa: PubRSA, x_uid: str = Header(...)) -> Respo
     
     return JSONResponse(status_code=201, content={"success": f"New RSA pub key written for {x_uid}"})
 
-@router.get("/history")
-async def get_history(ts: int = time.time(), uid: str = Depends(get_uid)):
-    messages = msg.get_messages_since(uid, ts)
-    updates = msg.get_updates_since(uid, ts)
+@router.get("/{uid}/history", dependencies=[Depends(required_headers)])
+async def get_history(uid: str, ts: int=0, x_uid: str = Header(...)) -> Response:
+    if uid != x_uid:
+        return JSONResponse(status_code=500, content={"unauthorized": "Can only acces authourized users history"})
+
+    messages = await msg.get_messages_since(x_uid, ts)
+    updates = await msg.get_updates_since(x_uid, ts)
     return JSONResponse(status_code=200, content={"messages": messages, "updates": updates, "since": ts})
