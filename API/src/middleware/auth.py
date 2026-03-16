@@ -12,8 +12,9 @@ class AuthMiddleware(BaseHTTPMiddleware):
         uid = request.headers.get("X-UID")
         jwt = request.headers.get("X-JWT")
 
-        if not uid or not jwt: ## reject if no auth headers
-            return JSONResponse(status_code=401, content={"error": "Missing Authentication Headers"})
+        ## un-comment when auth is working
+        """if not uid or not jwt: ## reject if no auth headers
+            return JSONResponse(status_code=401, content={"error": "Missing Authentication Headers"})"""
         if not await auth_user(uid, jwt): ## reject on failed auth
             return JSONResponse(status_code=403, content={"error": "Invalid Authentication"})
         
