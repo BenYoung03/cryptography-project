@@ -1,5 +1,8 @@
-from fastapi import APIRouter
-from ..redis_db import msg, user
+from fastapi import APIRouter, Depends
+from fastapi.responses import JSONResponse
+from ..redis_db import user
+from ..models.user import PubRSA
+from ..middleware.auth import get_uid
 
 router = APIRouter()
 
@@ -14,10 +17,13 @@ async def get_msg_read():
     return await read_msg()
 """
 
-@router.get("/rsa/{uid}")
-async def get_rsa_pub():
-    return True
+@router.get("/rsa")
+async def get_rsa_pub(uid: str = Depends(get_uid)):
+    res = await user.get_user_rsa(uid)
 
-@router.post("/rsa/{uid}")
-async def post_rsa_pub():
-    return True
+@router.post("/rsa")
+async def post_rsa_pub(rsa: PubRSA, uid: str = Depends(get_uid)): ## fastAPI rejects if body doesnt match this!! very handy
+    res = await user.set_user_rsa(uid, rsa)
+    if res<0:
+        return JSONResponse(status_code=500, content={"error": "redis update/write failed, contact backend dev"})
+    return JSONResponse(status_code=201, content={"success": f"New RSA pub key written for {uid}"})
