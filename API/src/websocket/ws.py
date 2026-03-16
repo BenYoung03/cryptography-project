@@ -19,7 +19,8 @@ router = APIRouter()
 manager = ConnectionManager()
 
 @router.websocket("/ws")
-async def ws_endpoint(ws: WebSocket, uid: str = Depends(get_uid)):
+async def ws_endpoint(ws: WebSocket):
+    uid = ws.state.uid
     await manager.connect(ws, uid) ## add connection to manager
 
     try:
