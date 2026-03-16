@@ -5,7 +5,7 @@ class Status(Enum):
     SENT =      0
     DELIVERED = 1
     READ =      2
-    DELETED =   4
+    DELETED =   3
 
 
 class CipherText(BaseModel):
