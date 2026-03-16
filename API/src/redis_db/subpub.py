@@ -18,7 +18,9 @@ async def redis_listener():
     await pubsub.subscribe("ws_events")
 
     async for data in pubsub.listen():
-        data = RedisEvent(**data)
+        try:
+            data = RedisEvent(**data)
+        except: continue
 
         if data["type"] == EventType.NEW_MESSAGE.value:
             msg = get_message(data.msg_id)
