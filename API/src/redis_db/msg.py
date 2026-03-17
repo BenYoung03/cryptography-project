@@ -18,7 +18,9 @@ async def update_message_status(update: Update):
     if msg.status==Status.DELETED: 
         res = await null_message(update.msg_id, ts)
     elif update.status.value<=msg.status.value:
-        return res
+        ##return res 
+        pass
+        
     else:
         res = await r.hset(
             f"msg:{update.msg_id}", 
@@ -59,20 +61,20 @@ async def store_message(msg: Msg):
         f"msg:{msg.msg_id}",
         mapping={
             "msg_id": msg.msg_id,
-            "sender_uid": msg.sender_uid,
-            "recipient_uid": msg.recipient_uid,
+            "sender_uid": msg.sender_uid or "",
+            "recipient_uid": msg.recipient_uid or "",
 
-            "ciphertext": msg.ciphertext.ciphertext,
-            "IV": msg.ciphertext.IV,
+            "ciphertext": msg.ciphertext.ciphertext or "",
+            "IV": msg.ciphertext.IV or "",
             "tag": msg.ciphertext.tag or "",
 
-            "algorithm": msg.key.algorithm,
-            "encrypted_key": msg.key.encrypted_key,
+            "algorithm": msg.key.algorithm or "",
+            "encrypted_key": msg.key.encrypted_key or "",
 
-            "status": msg.status.value,
+            "status": msg.status.value or 0,
 
-            "timestamp": msg.timestamp,
-            "ttl": msg.ttl,
+            "timestamp": msg.timestamp or 0,
+            "ttl": msg.ttl or 0,
             "server_timestamp": ts
         },
     )
@@ -104,23 +106,32 @@ async def get_message(msg_id: str) -> Msg:
             encrypted_key=data["encrypted_key"]
         ),
         status=Status(int(data["status"])),
-        timestamp=int(data["timestamp"]),
+        timestamp=data["status"],
         ttl=int(data["ttl"]),
         server_timestamp=int(float(data["server_timestamp"])) or None
     )
     log.debug("[REDIS] SUCCESS retrieved MSG_ID: %s:\n%s", msg_id, msg.model_dump_json(indent=2))
     return msg
 
-async def get_status(msg_id: str) -> Update | None:
+async def get_status(msg_id: str) -> Update:
     log.debug("[REDIS] getting MSG_ID: %s status", msg_id)
-    status = await r.hget(f"msg:{msg_id}")
+    status = await r.hget(f"msg:{msg_id}", "status")
 
     if not status:
         log.debug("[REDIS] FAIL getting MSG_ID: %s status", msg_id)
-        return None
+        raise LookupError(f"Could not find status for MID: {msg_id}")
     
-    log.debug("[REDIS] SUCCESS MSG_ID: %s status", msg_id)
-    return Update(msg_id=msg_id, status=status)
+    log.debug("[REDIS] SUCCESS MSG_ID: %s status, Status: %s", msg_id, status)
+    return Update(msg_id=msg_id, status=Status(int(status)))
+
+async def get_routing(msg_id: str): 
+    log.debug("[REDIS] getting MSG_ID: %s ROUTING", msg_id)
+    routing = await r.hmget(f"msg:{msg_id}", "sender_uid", "recipient_uid")
+    if not routing:
+        raise LookupError(f"Can't find MID: {msg_id}")
+    
+    log.debug("[REDIS] SUCCESS got MSG_ID: %s ROUTING: %s", msg_id, json.dumps(routing, indent=None))
+    return routing
 
 async def get_messages_since(uid: str, ts: int):
     msg_ids = await r.zrangebyscore(
@@ -132,9 +143,16 @@ async def get_messages_since(uid: str, ts: int):
     messages = []
 
     for mid in msg_ids:
-        msg = get_message(mid)
-        if msg:
-            messages.append(msg.model_dump())
+        try:
+            msg = await get_message(mid)
+            if msg: 
+                messages.append(msg.model_dump_json())
+            else:
+                await r.zrem(f"user_msgs:{uid}", mid)
+        except LookupError:
+            await r.zrem(f"user_msgs:{uid}", mid)
+        except ValueError:
+            await r.zrem(f"user_msgs:{uid}", mid)
 
     return messages
 
@@ -147,8 +165,13 @@ async def get_updates_since(uid: str, ts: int):
 
     updates = []
     for mid in msg_ids:
-        status = get_status(mid)
-        if status:
-            updates.append(status.model_dump())
+        try:
+            status = await get_status(mid)
+            if status:
+                updates.append(status.model_dump_json())
+            else:
+                await r.zrem(f"user_msgs:{uid}", mid)
+        except:
+            await r.zrem(f"user_msgs:{uid}", mid)
 
     return updates

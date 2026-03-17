@@ -62,7 +62,7 @@ async def ws_endpoint(ws: WebSocket):
 
             if message.type == wsType.MSG:
                 message.payload.msg_id = generate_id("m")
-                message.payload.status = Status.READ
+                message.payload.status = Status.SENT
 
                 await msgCRUD.store_message(message.payload)
                 await manager.send_to_user(uid, wsMessage(type=wsType.RESPONSE, payload=wsResponse(
@@ -87,7 +87,11 @@ async def ws_endpoint(ws: WebSocket):
                     continue
                 
                 else:
-                    await manager.send_to_user(uid, wsMessage(type=wsType.UPDATE, payload=message.payload))
+                    await manager.send_to_user(uid, wsMessage(type=wsType.UPDATE, payload=wsResponse(
+                        msg_id=message.payload.msg_id,
+                        response_status="success",
+                        response_body="Posted Update"
+                    )))
 
                 
             log.debug("[WS] Sending REDIS event of type: %s", message.type)
