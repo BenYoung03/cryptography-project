@@ -12,10 +12,10 @@ async def get_msg_recipient(msg_id: str):
 async def update_message_status(update: Update):
     ts = time.time()
     msg: Msg
-    msg = get_message(update.msg_id)
+    msg = await get_message(update.msg_id)
 
     res = -1
-    if msg.status.value==Status.DELETED.value: 
+    if msg.status==Status.DELETED: 
         res = await null_message(update.msg_id, ts)
     elif update.status.value<=msg.status.value:
         return res
@@ -27,8 +27,11 @@ async def update_message_status(update: Update):
                 "server_timestamp": ts
             }
         )
+    
     await r.zadd(f"user_updates:{msg.recipient_uid}", {update.msg_id: ts})
     await r.zadd(f"user_updates:{msg.sender_uid}", {update.msg_id: ts})
+
+    return res
 
 async def null_message(msg_id, ts = time.time()):
     return await r.hset(
