@@ -134,7 +134,7 @@ async def get_messages_since(uid: str, ts: int):
     for mid in msg_ids:
         msg = get_message(mid)
         if msg:
-            messages.append(msg)
+            messages.append(msg.model_dump())
 
     return messages
 
@@ -149,6 +149,6 @@ async def get_updates_since(uid: str, ts: int):
     for mid in msg_ids:
         status = get_status(mid)
         if status:
-            updates.append(status)
+            updates.append(status.model_dump())
 
     return updates

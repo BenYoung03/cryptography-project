@@ -1,9 +1,6 @@
 from pydantic import BaseModel
 
-class PublicKey(BaseModel):
-    uid: str
-
-class PubRSA(PublicKey):
+class PubRSA(BaseModel):
     e: int
     n: int
 
