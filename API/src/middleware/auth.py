@@ -2,13 +2,11 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 from starlette.websockets import WebSocket
 from starlette.responses import JSONResponse
 from starlette.datastructures import State
+from fastapi import Request
 import logging
-## @BEN put auth function import here; use relative importing (..->go one path down): import auth_user
+from ..uauth.firebase import auth_user
 
 log = logging.getLogger("uvicorn.error")
-
-async def auth_user(uid: str, jwt: str):
-    return True ## @BEN delete this instead use import
 
 class AuthMiddleware:
     def __init__(self, app: ASGIApp):
@@ -21,10 +19,10 @@ class AuthMiddleware:
             uid = headers.get("x-uid")
             jwt = headers.get("x-jwt")
 
-            """if not uid or not jwt:
+            if not uid or not jwt:
                 response = JSONResponse({"error": "Unauthorized"}, status_code=401)
                 await response(scope, receive, send)
-                return""" ## uncomment when auth is in
+                return
             if not await auth_user(uid, jwt):
                 response = JSONResponse({"error": "Unauthorized"}, status_code=401)
                 await response(scope, receive, send)
@@ -42,10 +40,10 @@ class AuthMiddleware:
             uid = headers.get("x-uid")
             jwt = headers.get("x-jwt")
 
-            """if not uid or not jwt:
+            if not uid or not jwt:
                 response = JSONResponse({"error": "Unauthorized"}, status_code=401)
                 await response(scope, receive, send)
-                return""" ## un comment when auth is in
+                return
             if not await auth_user(uid, jwt):
                 ws = WebSocket(scope, receive=receive, send=send)
                 await ws.close(code=1008)
@@ -60,6 +58,6 @@ class AuthMiddleware:
         else:
             await self.app(scope, receive, send)
 
-async def get_uid(request):
+async def get_uid(request: Request):
     """Returns uid from injected request param"""
     return request.state.uid
