@@ -18,8 +18,7 @@ async def update_message_status(update: Update):
     if msg.status==Status.DELETED: 
         res = await null_message(update.msg_id, ts)
     elif update.status.value<=msg.status.value:
-        ##return res 
-        pass
+        return res
         
     else:
         res = await r.hset(
@@ -42,7 +41,7 @@ async def null_message(msg_id, ts = time.time()):
             "recipient_uid": "",
 
             "ciphertext": "",
-            "iv": "",
+            "IV": "",
             "tag": "",
 
             "status": Status.DELETED.value,
@@ -106,7 +105,7 @@ async def get_message(msg_id: str) -> Msg:
             encrypted_key=data["encrypted_key"]
         ),
         status=Status(int(data["status"])),
-        timestamp=data["status"],
+        timestamp=int(data["status"]),
         ttl=int(data["ttl"]),
         server_timestamp=int(float(data["server_timestamp"])) or None
     )
