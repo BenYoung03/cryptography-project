@@ -14,7 +14,6 @@ from ..models.redisEvents import RedisEvent
 
 ## utility functions
 from ..utils.ulid import generate_id
-from ..middleware.auth import get_uid
 
 router = APIRouter()
 manager = ConnectionManager()

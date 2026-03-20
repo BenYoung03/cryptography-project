@@ -6,7 +6,7 @@ from os import getenv
 from .api.routes import router as apiRouter
 from .websocket.ws import router as wsRouter, manager as wsManager
 from .redis_db.subpub import redis_listener, init_manager
-from .middleware.auth import AuthMiddleware
+from .uauth.middleware import AuthMiddleware
 from .uauth.firebase import initialize_firebase
 
 LOGLEVEL = getenv('LOGLEVEL') or "INFO"
