@@ -1,10 +1,32 @@
 services:
+    traefik:
+        image: traefik:v3
+        container_name: traefik
+        command:
+            - --providers.docker=true
+            - --providers.docker.exposedbydefault=false
+
+            # HTTP only
+            - --entrypoints.web.address=:80
+
+            # dashboard (local only)
+            - --api.insecure=true
+            - --api.dashboard=true
+        
+        ports:
+            - "80:80"
+            - "8080:8080"
+
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+
+        networks:
+            - backend
+
     web:
         build: .
         container_name: cyllenian
-        ports: [8000:8000]
         environment:
-            - REDIS_URL=redis:://redis:6379
             - PYTHONDONTWRITEBYTECODE=1
             - GOOGLE_APPLICATION_CREDENTIALS=/run/secrets/firebase-service-account.json
         volumes:
@@ -13,6 +35,15 @@ services:
             - redis
         networks:
             - backend
+
+        # Traefik Labels
+        labels:
+            - "traefik.enable=true"
+
+            - "traefik.http.routers.cyllenian.rule=PathPrefix(`/`)"
+            - "traefik.http.routers.cyllenian.entrypoints=web"
+
+            - "trafeik.http.services.cyllenian.loadbalancer.server.port=8000"
 
     ## DB service, linked up to its data volume for persistent storage, and the docker network
     redis:
