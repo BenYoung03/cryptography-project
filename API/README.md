@@ -39,7 +39,12 @@ If you dont want to be running sudo all the time you can follow the post install
 
 Compose runs and handles all the volumes, networks and services!! usually just used the compose inside the working directory when ran, but for dev we have another compose that just enables live code updates (mounts src as a volume!!), and runs the reload command on uvicorn.
 ```bash
-sudo docker compose -f compose.yaml -f compose.dev.yaml up
+sudo docker compose up --build
+```
+
+For the server you run:
+```bash
+sudo docker compose --env-file .env.server up -d --build
 ```
 
 Then just go to http://localhost:8000/docs to see the api!! Server will be setup to handle routing with Nginx and https.
