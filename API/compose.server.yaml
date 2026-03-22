@@ -1,0 +1,61 @@
+services:
+    traefik:
+        image: traefik:v3
+        container_name: traefik
+
+        # command to run on entry; make sure acme.json is set up properly (need acme to be 600 perms)
+        entrypoint: >
+            sh -c "
+                touch /letsencrypt/acme.json     &&
+                chmod 600 /letsencrypt/acme.json &&
+                exec traefik
+            "
+
+        command:
+            - --providers.docker=true
+            - --providers.docker.exposedbydefault=false
+
+            # HTTP and HTTPS ports
+            - --entrypoints.web.address=:80
+            - --entrypoints.websecure.address=:443
+
+            # redirect HTTP to HTTPS
+            - --entrypoints.web.http.redirections.entrypoint.to=websecure
+            - --entrypoints.web.http.redirections.entrypoint.scheme=https
+
+            # letsencrypt
+            - --certificatesresolvers.le.acme.tlschallenge=true
+            - --certificatesresolvers.le.acme.email=tjross1@lakeheadu.ca
+            - --certificatesresolvers.le.acme.storage=/letsencrypt/acme.json
+
+            # dashboard off in prod
+            - --api.dashboard=false
+
+        ports:
+            - "80:80"
+            - "443:443"
+
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+            - letsencrypt:/letsencrypt
+
+        networks:
+            - backend
+
+    web:
+        labels:
+            - "traefik.enable=true"
+
+            - "traefik.http.routers.cyllenian.rule=Host(`cyllenian.jolyne.org`)"
+
+            - "traefik.http.routers.cyllenian.entrypoints=websecure"
+            - "traefik.http.routers.cyllenian.tls.certresolver=le"
+
+            - "traefik.http.services.cyllenian.loadbalancer.server.port=8000"
+
+volumes:
+    ## where https certs are stored
+    letsencrypt:
+
+networks:
+    backend:
