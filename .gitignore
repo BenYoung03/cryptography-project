@@ -3,6 +3,5 @@
 .vscode
 API/src/__pycache__
 .python-version
-/API/.env
 API/src/uauth/cyllenian-d6aec-firebase-adminsdk-fbsvc-518f7a31c5.json
 /API/firebase-key.json
