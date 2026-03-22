@@ -4,7 +4,7 @@ from starlette.responses import JSONResponse
 from starlette.datastructures import State
 from fastapi import Request
 import logging
-from ..uauth.firebase import auth_user
+from .firebase import auth_user
 
 log = logging.getLogger("uvicorn.error")
 

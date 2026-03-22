@@ -4,7 +4,6 @@ from pydantic import BaseModel
 from ..redis_db import user
 from ..redis_db import msg
 from ..models.user import PubRSA
-from ..middleware.auth import get_uid
 import time
 
 router = APIRouter()
