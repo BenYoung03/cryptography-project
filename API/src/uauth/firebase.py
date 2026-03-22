@@ -11,11 +11,11 @@ def initialize_firebase():
         # Check if already initialized
         if not firebase_admin._apps:
             key_path = os.getenv(
-                "GOOGLE_APPLICATION_CREDENTIALS",
+                "GOOGLE_APPLICATION_CREDENTIALS" """, # redudant code; api key no longer copied to docker container on build
                 os.path.join(
                     os.path.dirname(__file__),
                     "cyllenian-d6aec-firebase-adminsdk-fbsvc-518f7a31c5.json"
-                )
+                )"""
             )
             cred = credentials.Certificate(key_path)
             firebase_admin.initialize_app(cred)

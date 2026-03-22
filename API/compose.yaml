@@ -8,7 +8,7 @@ services:
             - PYTHONDONTWRITEBYTECODE=1
             - GOOGLE_APPLICATION_CREDENTIALS=/run/secrets/firebase-service-account.json
         volumes:
-            - ./src/uauth/cyllenian-d6aec-firebase-adminsdk-fbsvc-518f7a31c5.json:/run/secrets/firebase-service-account.json:ro
+            - ./firebase-key.json:/run/secrets/firebase-service-account.json:ro
         depends_on:
             - redis
         networks:
