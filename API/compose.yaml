@@ -52,6 +52,8 @@ services:
         environment:
             - PYTHONDONTWRITEBYTECODE=1
             - GOOGLE_APPLICATION_CREDENTIALS=/run/secrets/firebase-service-account.json
+            - DOMAIN=${DOMAIN}
+            - LOGLEVEL=${LOGLEVEL}
         volumes:
             - ./firebase-key.json:/run/secrets/firebase-service-account.json:ro
         depends_on:
