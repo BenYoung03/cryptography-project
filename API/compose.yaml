@@ -1,29 +1,54 @@
+version: '3.9'
+
 services:
     traefik:
         image: traefik:v3
         container_name: traefik
+
+        ## shell script to run to ensure acme.json exists
+        entrypoint: >
+            sh -c "
+                if [ ! -f /letsencrypt/acme.json ]; then
+                    touch /letsencrypt/acme.json     \
+                    chmod 600 /letsencrypt/acme.json
+                fi
+                exec traefik
+            "
+
         command:
             - --providers.docker=true
             - --providers.docker.exposedbydefault=false
 
-            # HTTP only
+            # HTTPs and HTTPS
             - --entrypoints.web.address=:80
+            - --entrypoints.websecure.address=:443
+
+            # HTTP to HTTPS upgrade if TLS enabled (in env vars)
+            - --entrypoints.web.http.redirections.entrypoint.to=websecure
+            - --entrypoints.web.http.redirections.entrypoint.scheme=https
+
+            # letsencrypt resolver
+            - --certificatesresolvers.le.acme.tlschallenge=true
+            - --certificatesresolvers.le.acme.email=tjross1@lakeheadu.ca
+            - --certificatesresolvers.le.acme.storage=/letsencrypt/acme.json
 
             # dashboard (local only)
-            - --api.insecure=true
-            - --api.dashboard=true
+            - --api.insecure=${TRAEFIK_DASHBOARD}
+            - --api.dashboard=${TRAEFIK_DASHBOARD}
         
         ports:
             - "80:80"
+            - "443:443"
             - "8080:8080"
 
         volumes:
             - /var/run/docker.sock:/var/run/docker.sock:ro
+            - letsencrypt:/letsencrypt
 
         networks:
             - backend
 
-    web:
+    cyllenian:
         build: .
         container_name: cyllenian
         environment:
@@ -40,10 +65,12 @@ services:
         labels:
             - "traefik.enable=true"
 
-            - "traefik.http.routers.cyllenian.rule=PathPrefix(`/`)"
-            - "traefik.http.routers.cyllenian.entrypoints=web"
+            # web to secure if LE_RESOLVER exists
+            - "traefik.http.routers.cyllenian.entrypoints=web${LE_RESOLVER:+secure}"
+            - "traefik.http.routers.cyllenian.rule=Host(`${DOMAIN}`)"
+            - "traefik.http.routers.cyllenian.tls.certresolver=${LE_RESOLVER}"
 
-            - "trafeik.http.services.cyllenian.loadbalancer.server.port=8000"
+            - "traefik.http.services.cyllenian.loadbalancer.server.port=8000"
 
     ## DB service, linked up to its data volume for persistent storage, and the docker network
     redis:
