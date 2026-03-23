@@ -26,7 +26,8 @@ services:
             - --entrypoints.web.http.redirections.entrypoint.scheme=https
 
             # letsencrypt resolver
-            - --certificatesresolvers.le.acme.tlschallenge=true
+            - --certificatesresolvers.le.acme.httpchallenge=true
+            - --certificatesresolvers.le.acme.httpchallenge.entrypoint=web
             - --certificatesresolvers.le.acme.email=tjross1@lakeheadu.ca
             - --certificatesresolvers.le.acme.storage=/letsencrypt/acme.json
 
