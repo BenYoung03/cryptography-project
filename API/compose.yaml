@@ -34,6 +34,10 @@ services:
             # dashboard (local only)
             - --api.insecure=${TRAEFIK_DASHBOARD}
             - --api.dashboard=${TRAEFIK_DASHBOARD}
+
+            # logging
+            - --log.level=DEBUG
+            - --accesslog=true
         
         ports:
             - "80:80"
