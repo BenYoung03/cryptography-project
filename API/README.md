@@ -47,4 +47,4 @@ For the server you run:
 sudo docker compose --env-file .env.server up -d --build
 ```
 
-Then just go to http://localhost:8000/docs to see the api!! Server will be setup to handle routing with Nginx and https.
+Then just go to http://localhost/docs to see the api!! Server will be setup to handle routing with Nginx and https.
