@@ -30,6 +30,12 @@ async def post_rsa_pub(uid: str, rsa: PubRSA, x_uid: str = Header(...)) -> Respo
     
     return JSONResponse(status_code=201, content={"success": f"New RSA pub key written for {x_uid}"})
 
+@router.get("/{email}/uid", dependencies=[Depends(required_headers)])
+async def get_uid_by_email(email: str) -> Response:
+    ## CODE HERE @ben
+    uid: str
+    return JSONResponse(status_code=200, content={"uid": uid})
+
 @router.get("/{uid}/history", dependencies=[Depends(required_headers)])
 async def get_history(uid: str, ts: int=0, x_uid: str = Header(...)) -> Response:
     if uid != x_uid:
