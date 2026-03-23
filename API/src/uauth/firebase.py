@@ -45,3 +45,21 @@ async def auth_user(uid: str, jwt: str) -> bool:
     except Exception as e:
         log.warning("[FIREBASE] auth rejected token for UID %s: %s", uid, repr(e))
         return False
+
+
+async def get_uid_by_email(email: str) -> str | None:
+    if not email:
+        return None
+
+    if not firebase_admin._apps and not initialize_firebase():
+        return None
+
+    try:
+        user = auth.get_user_by_email(email)
+        return user.uid
+    except auth.UserNotFoundError:
+        log.warning("[FIREBASE] no user found for email: %s", email)
+        return None
+    except Exception as e:
+        log.error("[FIREBASE] failed to get uid by email %s: %s", email, repr(e))
+        return None        

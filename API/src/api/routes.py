@@ -5,6 +5,7 @@ from ..redis_db import user
 from ..redis_db import msg
 from ..models.user import PubRSA
 import time
+from ..uauth.firebase import get_uid_by_email as firebase_get_uid_by_email
 
 router = APIRouter()
 
@@ -32,8 +33,10 @@ async def post_rsa_pub(uid: str, rsa: PubRSA, x_uid: str = Header(...)) -> Respo
 
 @router.get("/{email}/uid", dependencies=[Depends(required_headers)])
 async def get_uid_by_email(email: str) -> Response:
-    ## CODE HERE @ben
     uid: str
+    uid = await firebase_get_uid_by_email(email)
+    if uid is None:
+        return JSONResponse(status_code=404, content={"error": "no firebase uid found for email"})
     return JSONResponse(status_code=200, content={"uid": uid})
 
 @router.get("/{uid}/history", dependencies=[Depends(required_headers)])
