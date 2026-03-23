@@ -36,7 +36,7 @@ services:
             - --api.dashboard=${TRAEFIK_DASHBOARD}
 
             # logging
-            - --log.level=DEBUG
+            - --log.level=INFO
             - --accesslog=true
         
         ports:
@@ -71,7 +71,7 @@ services:
             - "traefik.enable=true"
 
             # web to secure if LE_RESOLVER exists
-            - "traefik.http.routers.cyllenian.entrypoints=web,websecure"
+            - "traefik.http.routers.cyllenian.entrypoints=${ENTRYPOINT}"
             - "traefik.http.routers.cyllenian.rule=Host(`${DOMAIN}`)"
             - "traefik.http.routers.cyllenian.tls.certresolver=${LE_RESOLVER}"
 
