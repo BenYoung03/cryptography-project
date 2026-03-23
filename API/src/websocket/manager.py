@@ -1,7 +1,6 @@
 from fastapi import WebSocket
 from asyncio import Lock
 from ..models.ws import wsMessage
-import weakref
 import logging
 
 log = logging.getLogger("uvicorn.error")
@@ -17,7 +16,7 @@ class ConnectionManager:
             Provides locking for editing the connections dictionary
     """
     def __init__(self):
-        self.connections = weakref.WeakValueDictionary()
+        self.connections: dict[str, WebSocket] = {}
         self.lock = Lock()
     
     async def connect(self, ws: WebSocket, uid: str):
@@ -26,9 +25,11 @@ class ConnectionManager:
         async with self.lock:
             self.connections[uid] = ws
     
-    async def disconnect(self, uid: str): 
+    async def disconnect(self, ws: WebSocket, uid: str): 
         async with self.lock:
-            ws = self.connections.pop(uid, None)
+            # Only remove if the connection being tracked is the one actually disconnecting
+            if self.connections.get(uid) == ws:
+                self.connections.pop(uid, None)
 
     async def send_to_user(self, uid: str, msg: wsMessage):
         log.debug("[WS-MANAGER] sending to UID: %s, MSG:\n%s", uid, msg.model_dump_json(indent=2))
@@ -36,6 +37,7 @@ class ConnectionManager:
             ws: WebSocket
             ws=self.connections.get(uid)
             if ws:
-                await ws.send_json(msg.model_dump_json())
-
-
+                try:
+                    await ws.send_text(msg.model_dump_json())
+                except Exception as e:
+                    log.error("[WS-MANAGER] Failed to send to UID %s: %s", uid, repr(e))

@@ -38,7 +38,7 @@ async def run_redis_tests():
             ciphertext=CipherText(
                 ciphertext="hello",
                 IV="iv123",
-                tag="tag123"
+                signature="sig123"
             ),
             key=Key(
                 algorithm="aes",

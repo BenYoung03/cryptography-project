@@ -42,7 +42,7 @@ async def null_message(msg_id, ts = time.time()):
 
             "ciphertext": "",
             "IV": "",
-            "tag": "",
+            "signature": "",
 
             "status": Status.DELETED.value,
 
@@ -65,7 +65,7 @@ async def store_message(msg: Msg):
 
             "ciphertext": msg.ciphertext.ciphertext or "",
             "IV": msg.ciphertext.IV or "",
-            "tag": msg.ciphertext.tag or "",
+            "signature": msg.ciphertext.signature or "",
 
             "algorithm": msg.key.algorithm or "",
             "encrypted_key": msg.key.encrypted_key or "",
@@ -98,14 +98,14 @@ async def get_message(msg_id: str) -> Msg:
         ciphertext=CipherText(
             ciphertext=data["ciphertext"], 
             IV=data["IV"], 
-            tag=data["tag"]
+            signature=data.get("signature") if data.get("signature") else None
         ),
         key=Key(
             algorithm=data["algorithm"], 
-            encrypted_key=data["encrypted_key"]
+            encrypted_key=data.get("encrypted_key") if data.get("encrypted_key") else None
         ),
         status=Status(int(data["status"])),
-        timestamp=int(data["status"]),
+        timestamp=int(data["timestamp"]),
         ttl=int(data["ttl"]),
         server_timestamp=int(float(data["server_timestamp"])) or None
     )

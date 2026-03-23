@@ -8,10 +8,6 @@ import time
 
 router = APIRouter()
 
-class RSAResponse(BaseModel):
-    uid: str
-    key: PubRSA
-
 async def required_headers(x_uid: str = Header(...), x_jwt: str = Header(...)):
     # This dependency is just for docs
     return {"uid": x_uid, "jwt": x_jwt}
@@ -21,7 +17,7 @@ async def get_rsa_pub(uid: str) -> Response:
     res = await user.get_user_rsa(uid)
     if res == None:
         return JSONResponse(status_code=404, content={"error": "uid does not have associated public key"})
-    return JSONResponse(status_code=200, content=RSAResponse(uid=uid, key=res).model_dump())
+    return JSONResponse(status_code=200, content={"public_key": res.public_key})
 
 @router.post("/{uid}/rsa", dependencies=[Depends(required_headers)])
 async def post_rsa_pub(uid: str, rsa: PubRSA, x_uid: str = Header(...)) -> Response: ## fastAPI rejects if body doesnt match this!! very handy

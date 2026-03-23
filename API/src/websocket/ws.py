@@ -14,6 +14,7 @@ from ..models.redisEvents import RedisEvent
 
 ## utility functions
 from ..utils.ulid import generate_id
+from ..uauth.middleware import get_uid
 
 router = APIRouter()
 manager = ConnectionManager()
@@ -43,7 +44,7 @@ async def ws_endpoint(ws: WebSocket):
                 else:
                     await manager.send_to_user(uid, wsMessage(type="error", payload=wsError(
                         error_type="invalid-type",
-                        error_msg=f"Server does not accept {manager.type.value}"
+                        error_msg=f"Server does not accept {message.type.value}"
                     )))
                     continue
             except WebSocketDisconnect:
@@ -100,4 +101,4 @@ async def ws_endpoint(ws: WebSocket):
             )
         
     finally:
-        await manager.disconnect(uid)
+        await manager.disconnect(ws, uid)

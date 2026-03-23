@@ -1,6 +1,4 @@
 from pydantic import BaseModel
 
 class PubRSA(BaseModel):
-    e: int
-    n: int
-
+    public_key: str

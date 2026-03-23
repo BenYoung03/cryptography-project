@@ -9,8 +9,7 @@ async def set_user_rsa(uid: str, key: PubRSA):
     log.debug("[REDIS] Writing RSA for UID: %s: %s", uid, key.model_dump_json(indent=None))
     return await r.hset(f"user:{uid}", mapping={
         "type": "RSA",
-        "e": key.e,
-        "n": key.n
+        "public_key": key.public_key
     })
 
 async def get_user_rsa(uid: str):
@@ -21,4 +20,4 @@ async def get_user_rsa(uid: str):
     if not data:
         return None
     
-    return PubRSA(e=int(data["e"]), n=int(data["n"]))
+    return PubRSA(public_key=data["public_key"])

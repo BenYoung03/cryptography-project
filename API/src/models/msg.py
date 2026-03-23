@@ -11,11 +11,11 @@ class Status(Enum):
 class CipherText(BaseModel):
     ciphertext: str
     IV: str
-    tag: str | None = None
+    signature: str | None = None
 
 class Key(BaseModel):
     algorithm: str
-    encrypted_key: str
+    encrypted_key: str | None = None
 
 class Msg(BaseModel):
 ## Routing Data
