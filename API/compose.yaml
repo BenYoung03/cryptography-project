@@ -67,7 +67,7 @@ services:
             - "traefik.enable=true"
 
             # web to secure if LE_RESOLVER exists
-            - "traefik.http.routers.cyllenian.entrypoints=web${LE_RESOLVER:+secure}"
+            - "traefik.http.routers.cyllenian.entrypoints=web,websecure"
             - "traefik.http.routers.cyllenian.rule=Host(`${DOMAIN}`)"
             - "traefik.http.routers.cyllenian.tls.certresolver=${LE_RESOLVER}"
 
