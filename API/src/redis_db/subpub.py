@@ -20,11 +20,11 @@ def init_manager(m: ConnectionManager):
 async def redis_listener():
     pubsub = r.pubsub()
 
-    await pubsub.subscribe("ws_events")
-
-    log.debug("[REDIS-EVENT] pubsub is listening")
-
     try:
+        await pubsub.subscribe("ws_events")
+
+        log.debug("[REDIS-EVENT] pubsub is listening")
+
         async for data in pubsub.listen():
             try:
                 event = RedisEvent(**json.loads(data["data"]))
@@ -64,3 +64,5 @@ async def redis_listener():
                 continue
     except Exception as e:
         log.critical("[REDIS-EVENT] FATAL LISTENER CRASH: %s", repr(e))
+    finally:
+        await pubsub.close()

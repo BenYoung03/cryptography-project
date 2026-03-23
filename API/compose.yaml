@@ -1,18 +1,76 @@
 services:
-    web:
+    traefik:
+        image: traefik:v3
+        container_name: traefik
+
+        ## shell script to run to ensure acme.json exists
+        entrypoint: >
+            sh -c "
+                if [ ! -f /letsencrypt/acme.json ]; then
+                    touch /letsencrypt/acme.json &&  \
+                    chmod 600 /letsencrypt/acme.json
+                fi
+                exec traefik
+            "
+
+        command:
+            - --providers.docker=true
+            - --providers.docker.exposedbydefault=false
+
+            # HTTPs and HTTPS
+            - --entrypoints.web.address=:80
+            - --entrypoints.websecure.address=:443
+
+            # HTTP to HTTPS upgrade if TLS enabled (in env vars)
+            - --entrypoints.web.http.redirections.entrypoint.to=websecure
+            - --entrypoints.web.http.redirections.entrypoint.scheme=https
+
+            # letsencrypt resolver
+            - --certificatesresolvers.le.acme.tlschallenge=true
+            - --certificatesresolvers.le.acme.email=tjross1@lakeheadu.ca
+            - --certificatesresolvers.le.acme.storage=/letsencrypt/acme.json
+
+            # dashboard (local only)
+            - --api.insecure=${TRAEFIK_DASHBOARD}
+            - --api.dashboard=${TRAEFIK_DASHBOARD}
+        
+        ports:
+            - "80:80"
+            - "443:443"
+            - "8080:8080"
+
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+            - letsencrypt:/letsencrypt
+
+        networks:
+            - backend
+
+    cyllenian:
         build: .
         container_name: cyllenian
-        ports: [8000:8000]
         environment:
-            - REDIS_URL=redis:://redis:6379
             - PYTHONDONTWRITEBYTECODE=1
             - GOOGLE_APPLICATION_CREDENTIALS=/run/secrets/firebase-service-account.json
+            - DOMAIN=${DOMAIN}
+            - LOGLEVEL=${LOGLEVEL}
         volumes:
             - ./firebase-key.json:/run/secrets/firebase-service-account.json:ro
         depends_on:
             - redis
         networks:
             - backend
+
+        # Traefik Labels
+        labels:
+            - "traefik.enable=true"
+
+            # web to secure if LE_RESOLVER exists
+            - "traefik.http.routers.cyllenian.entrypoints=web${LE_RESOLVER:+secure}"
+            - "traefik.http.routers.cyllenian.rule=Host(`${DOMAIN}`)"
+            - "traefik.http.routers.cyllenian.tls.certresolver=${LE_RESOLVER}"
+
+            - "traefik.http.services.cyllenian.loadbalancer.server.port=8000"
 
     ## DB service, linked up to its data volume for persistent storage, and the docker network
     redis:
@@ -26,6 +84,7 @@ services:
 ## DB data storage
 volumes:
     redis_data:
+    letsencrypt:
 
 ## Network for inter-service communication
 networks:

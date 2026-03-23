@@ -23,14 +23,17 @@ async def lifespan(app: FastAPI):
     initialize_firebase()
 
     redis_task = asyncio.create_task(redis_listener()) ## spin up listener task
-    yield
-    redis_task.cancel()
-    for uid, ws in list(wsManager.connections.items()):
-        try:
-            await ws.close()
-        except:
-            pass
-    wsManager.connections.clear()
+    
+    try:
+        yield
+    finally:
+        redis_task.cancel()
+        for uid, ws in list(wsManager.connections.items()):
+            try:
+                await ws.close()
+            except:
+                pass
+        wsManager.connections.clear()
 
 ## app and router init
 app = FastAPI(title="Cyllenian Web Backend", lifespan=lifespan)
