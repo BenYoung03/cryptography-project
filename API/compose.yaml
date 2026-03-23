@@ -74,6 +74,12 @@ services:
             - "traefik.http.routers.cyllenian.entrypoints=${ENTRYPOINT}"
             - "traefik.http.routers.cyllenian.rule=Host(`${DOMAIN}`)"
             - "traefik.http.routers.cyllenian.tls.certresolver=${LE_RESOLVER}"
+           
+            # acme HTTP challenge router
+            - "traefik.http.routers.cyllenian-acme.entrypoints=web"
+            - "traefik.http.routers.cyllenian-acme.rule=Host(`${DOMAIN}`)"
+            - "traefik.http.routers.cyllenian-acme.tls=false"
+            - "traefik.http.routers.cyllenian-acme.priority=100"
 
             - "traefik.http.services.cyllenian.loadbalancer.server.port=8000"
 
