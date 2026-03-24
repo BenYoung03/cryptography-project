@@ -1,0 +1,43 @@
+include:
+    - compose.yaml
+
+services:
+    traefik:
+        ## shell script to run to ensure acme.json exists
+        entrypoint: >
+            sh -c "
+                if [ ! -f /letsencrypt/acme.json ]; then
+                    touch /letsencrypt/acme.json &&  \
+                    chmod 600 /letsencrypt/acme.json
+                fi
+                exec traefik "$@"
+            "
+        env_file:
+            - .env.server
+        # acme variables
+        command:
+            - --entrypoints.websecure.address=:443
+
+            # HTTP to HTTPS upgrade if TLS enabled (in env vars)
+            - --entrypoints.web.http.redirections.entrypoint.to=websecure
+            - --entrypoints.web.http.redirections.entrypoint.scheme=https
+
+            # letsencrypt resolver
+            - --certificatesresolvers.le.acme.httpchallenge=true
+            - --certificatesresolvers.le.acme.httpchallenge.entrypoint=web
+            - --certificatesresolvers.le.acme.email=tjross1@lakeheadu.ca
+            - --certificatesresolvers.le.acme.storage=/letsencrypt/acme.json
+        
+        ports:
+            - "443:443"
+        # letsencrypt function
+        volumes:
+            - letsencrypt:/letsencrypt
+
+    cyllenian:
+        labels:
+            - "traefik.http.routers.cyllenian.entrypoints=websecure"
+            - "traefik.http.routers.cyllenian.tls.certresolver=le"
+            
+volumes:
+    letsencrypt:
