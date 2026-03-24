@@ -15,8 +15,9 @@ async def update_message_status(update: Update):
     msg = await get_message(update.msg_id)
 
     res = -1
-    if msg.status==Status.DELETED: 
+    if update.status==Status.DELETED: 
         res = await null_message(update.msg_id, ts)
+        return res
     elif update.status.value<=msg.status.value:
         return res
         
