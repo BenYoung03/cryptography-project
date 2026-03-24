@@ -7,8 +7,9 @@ services:
             - --providers.docker=true
             - --providers.docker.exposedbydefault=false
 
-            # HTTP
+            # HTTP and HTTPS
             - --entrypoints.web.address=:80
+            - --entrypoint.websecure.address=:443
 
             # dashboard (local only)
             - --api.insecure=${TRAEFIK_DASHBOARD}
@@ -47,7 +48,7 @@ services:
             - "traefik.enable=true"
 
             # web to secure if LE_RESOLVER exists
-            - "traefik.http.routers.cyllenian.entrypoints=web"
+            - "traefik.http.routers.cyllenian.entrypoints={$ENTRYPOINT}"
             - "traefik.http.routers.cyllenian.rule=Host(`${DOMAIN}`)"
 
             - "traefik.http.services.cyllenian.loadbalancer.server.port=8000"

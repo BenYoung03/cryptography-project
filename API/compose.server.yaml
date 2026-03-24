@@ -16,8 +16,6 @@ services:
             - .env.server
         # acme variables
         command:
-            - --entrypoints.websecure.address=:443
-
             # HTTP to HTTPS upgrade if TLS enabled (in env vars)
             - --entrypoints.web.http.redirections.entrypoint.to=websecure
             - --entrypoints.web.http.redirections.entrypoint.scheme=https
@@ -36,7 +34,6 @@ services:
 
     cyllenian:
         labels:
-            - "traefik.http.routers.cyllenian.entrypoints=websecure"
             - "traefik.http.routers.cyllenian.tls.certresolver=le"
             
 volumes:
