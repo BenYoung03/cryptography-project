@@ -3,7 +3,7 @@
 Docker deployment will be as simple as cloning the repo and running compose!!
 
 First install docker: https://docs.docker.com/engine/install/
-Or the windows install: https://docs.docker.com/desktop/setup/install/windows-install/
+Or the windows install: https://docs.docker.com/desktop/setup/install/windows-install/; need to use powershell or just the GUI (i have never used it)
 
 If you dont want to be running sudo all the time you can follow the post install instructions to set it up differently, also see windows commands in the docs if you are on a windows machine (should be the same w/out the sudo).
 
