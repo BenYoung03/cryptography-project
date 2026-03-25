@@ -30,7 +30,7 @@ async def ws_endpoint(ws: WebSocket):
         while True:
             try:
                 data = await ws.receive_json()
-                log.debug("[WS] recieved raw-data:\n%s", json.dumps(data, indent=2))
+                log.info("[WS] recieved raw-data:\n%s", json.dumps(data, indent=2))
                 
                 message = wsMessage(
                     type=data["type"],
@@ -57,7 +57,7 @@ async def ws_endpoint(ws: WebSocket):
                 )))
                 continue
 
-            log.debug("[WS] wsMessage payload is VALID")
+            log.info("[WS] wsMessage payload is VALID")
 
 
             if message.type == wsType.MSG:
@@ -94,7 +94,7 @@ async def ws_endpoint(ws: WebSocket):
                     )))
 
                 
-            log.debug("[WS] Sending REDIS event of type: %s", message.type)
+            log.info("[WS] Sending REDIS event of type: %s", message.type)
             await r.publish(
                 "ws_events",
                 RedisEvent(type=message.type, msg_id=message.payload.msg_id).model_dump_json()
