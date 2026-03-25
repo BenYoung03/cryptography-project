@@ -29,6 +29,7 @@ For the frontend it should auto fallback to localhost if cyllenian.jolyne.org is
 ```bash
 docker compose -f compose.notraefik.yaml up --build
 ```
+Do note the frontend would not be able to handle this; in that case please go in and change from localhost to localhost:8000 yourself; or just disable whatevers listening on HTTP/port 80 on your machine please!!
 
 ### Shutting Down
 Simply Ctrl+C out of the context and run
