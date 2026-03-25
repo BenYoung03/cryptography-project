@@ -11,7 +11,9 @@ FIRST MAKE SURE YOU ARE IN THE DIRECTORY WITH THE COMPOSE FILES
 
 ALSO MAKE SURE YOU HAVE A FIREBASE SERVICE FILE!!
 
-Compose runs and handles all the volumes, networks and services!!
+Compose runs and handles all the volumes, networks and services!! this is for just a local server w/ only http. TRAFFIC WILL NOT BE ENCRYPTED; but the client side encryption should stay up!! which is largely nonsense but you can see the metadata really that could be valuable in an attack!!
+
+Ask that you do keep in mind the full app w/ an actual live server does enforce HTTPS and WSS and is further protected by cloudflare; just hard to show that here and wanted you to be able to run it for marking!!
 ```bash
 docker compose up --build
 ```
@@ -23,7 +25,7 @@ docker compose --env-file .env.server -f compose.yaml -f compose.server.yaml up 
 
 Then just go to http://localhost/docs to see the api!!
 
-For the frontend it should auto fallback to localhost if cyllenian.jolyne.org is not up!!
+For the frontend it should auto fallback to localhost if cyllenian.jolyne.org is not up!! will most likely not be as I feel cagey keeping stuff like that up longer than whats necessary!
 
 **NOTE**: Make sure nothing is occupying your localhost:80!!! if so please stop them from running to run this app; or run
 ```bash
