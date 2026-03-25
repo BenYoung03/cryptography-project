@@ -57,7 +57,7 @@ async def ws_endpoint(ws: WebSocket):
                 )))
                 continue
 
-            log.debug("[WS] ws payload: %s", message.payload.model_dump_json(indent=2))
+            log.debug("[WS] wsMessage payload is VALID")
 
 
             if message.type == wsType.MSG:

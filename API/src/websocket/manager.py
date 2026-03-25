@@ -20,12 +20,14 @@ class ConnectionManager:
         self.lock = Lock()
     
     async def connect(self, ws: WebSocket, uid: str):
+        log.debug("[WS-MANAGER] Opening Connection for UID:%s", uid)
         await ws.accept()
         ## lock prevents concurrent write and potential race conditions
         async with self.lock:
             self.connections[uid] = ws
     
     async def disconnect(self, ws: WebSocket, uid: str): 
+        log.debug("[WS-MANAGER] Closing Connection for UID:%s", uid)
         async with self.lock:
             # Only remove if the connection being tracked is the one actually disconnecting
             if self.connections.get(uid) == ws:

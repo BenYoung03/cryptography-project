@@ -32,7 +32,7 @@ async def redis_listener():
                 # Normal for initial subscribe confirmation messages
                 continue
 
-            log.debug("[REDIS-EVENT] event posted %s", event.model_dump_json(indent=2))
+            log.debug("[REDIS-EVENT] event posted %s", event.model_dump_json(indent=None))
 
             if event.type == EventType.NEW_MESSAGE:
                 log.debug("[REDIS-EVENT] of type MSG")
@@ -51,6 +51,7 @@ async def redis_listener():
                     update = await get_status(event.msg_id)
                     routing = await get_routing(event.msg_id)
                     
+                    log.debug("[REDIS-EVENT] Sending update to UID: %s, and UID:%s", routing[0], routing[1])
                     await asyncio.gather(
                         manager.send_to_user(routing[0], wsMessage(type=wsType.UPDATE, payload=update)),
                         manager.send_to_user(routing[1], wsMessage(type=wsType.UPDATE, payload=update))
