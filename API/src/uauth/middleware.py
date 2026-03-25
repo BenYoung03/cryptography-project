@@ -8,10 +8,12 @@ from .firebase import auth_user
 
 log = logging.getLogger("uvicorn.error")
 
+## NEED AN ASGI APP FOR WEBSOCKET AUTH
 class AuthMiddleware:
     def __init__(self, app: ASGIApp):
         self.app = app
 
+    ## BASICALLY THE SAME CODE YOU JUST ACCESS SOME THINGS DIFFERENTLY
     async def __call__(self, scope: Scope, receive: Receive, send: Send):
         if scope["type"] == "http":
             # HTTP requests
@@ -44,6 +46,7 @@ class AuthMiddleware:
                 response = JSONResponse({"error": "Unauthorized"}, status_code=401)
                 await response(scope, receive, send)
                 return
+            ## CALL FIREBASE AUTH FUNCTION
             if not await auth_user(uid, jwt):
                 ws = WebSocket(scope, receive=receive, send=send)
                 await ws.close(code=1008)
@@ -58,6 +61,7 @@ class AuthMiddleware:
         else:
             await self.app(scope, receive, send)
 
+## LARGELY DEPRECATED; DO NOT NEED
 async def get_uid(request: Request):
     """Returns uid from injected request param"""
     return request.state.uid

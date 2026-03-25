@@ -9,10 +9,12 @@ from ..uauth.firebase import get_uid_by_email as firebase_get_uid_by_email
 
 router = APIRouter()
 
+## FOR DOCS
 async def required_headers(x_uid: str = Header(...), x_jwt: str = Header(...)):
     # This dependency is just for docs
     return {"uid": x_uid, "jwt": x_jwt}
 
+## GRAB USERS RSA
 @router.get("/{uid}/rsa", dependencies=[Depends(required_headers)])
 async def get_rsa_pub(uid: str) -> Response:
     res = await user.get_user_rsa(uid)
@@ -20,8 +22,9 @@ async def get_rsa_pub(uid: str) -> Response:
         return JSONResponse(status_code=404, content={"error": "uid does not have associated public key"})
     return JSONResponse(status_code=200, content={"public_key": res.public_key})
 
+## POST A NEW RSA FOR YOURSELF
 @router.post("/{uid}/rsa", dependencies=[Depends(required_headers)])
-async def post_rsa_pub(uid: str, rsa: PubRSA, x_uid: str = Header(...)) -> Response: ## fastAPI rejects if body doesnt match this!! very handy
+async def post_rsa_pub(uid: str, rsa: PubRSA, x_uid: str = Header(...)) -> Response:
     if uid != x_uid:
         return JSONResponse(status_code=401, content={"unauthorized": "Can only post keys for authourized user"})
     
@@ -31,6 +34,7 @@ async def post_rsa_pub(uid: str, rsa: PubRSA, x_uid: str = Header(...)) -> Respo
     
     return JSONResponse(status_code=201, content={"success": f"New RSA pub key written for {x_uid}"})
 
+## GET USERS EMAIL
 @router.get("/{email}/uid", dependencies=[Depends(required_headers)])
 async def get_uid_by_email(email: str) -> Response:
     uid: str
@@ -39,6 +43,7 @@ async def get_uid_by_email(email: str) -> Response:
         return JSONResponse(status_code=404, content={"error": "no firebase uid found for email"})
     return JSONResponse(status_code=200, content={"uid": uid})
 
+## GET YOUR OWN HISTORY
 @router.get("/{uid}/history", dependencies=[Depends(required_headers)])
 async def get_history(uid: str, ts: int=0, x_uid: str = Header(...)) -> Response:
     if uid != x_uid:

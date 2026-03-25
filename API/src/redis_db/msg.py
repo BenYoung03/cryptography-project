@@ -15,9 +15,11 @@ async def update_message_status(update: Update):
     msg = await get_message(update.msg_id)
 
     res = -1
+    ## CHECK IF YOU DELETING; THEN DELETE
     if update.status==Status.DELETED: 
         res = await null_message(update.msg_id, ts)
         return res
+    ## OTHERWISE DISALLOW REVERSE UPDATES
     elif update.status.value<=msg.status.value:
         return res
         
@@ -30,11 +32,13 @@ async def update_message_status(update: Update):
             }
         )
     
+    ## MAKE SURE EVENT LOG IS UPDATED FOR BOTH USERS
     await r.zadd(f"user_updates:{msg.recipient_uid}", {update.msg_id: ts})
     await r.zadd(f"user_updates:{msg.sender_uid}", {update.msg_id: ts})
 
     return res
 
+## NULL OUT ALL NON-REQUIRED FIELDS (IF WE WERE TO CONTINUE WOULD OVERHAUL THIS SYSTEM)
 async def null_message(msg_id, ts = time.time()):
     return await r.hset(
         f"msg:{msg_id}",
@@ -53,6 +57,7 @@ async def null_message(msg_id, ts = time.time()):
         },
     )
 
+## STORES AS A HASH
 async def store_message(msg: Msg):
     log.debug("[REDIS] storing MSG_ID: %s, from UID: %s, to UID: %s", msg.msg_id, msg.sender_uid, msg.recipient_uid)
     ts = time.time() ## ADD SERVER TIMESTAMP HERE
@@ -79,6 +84,7 @@ async def store_message(msg: Msg):
         },
     )
 
+    ## EVENT LOG UPDATE
     await r.zadd(f"user_msgs:{msg.sender_uid}", {msg.msg_id: ts})
     await r.zadd(f"user_msgs:{msg.recipient_uid}", {msg.msg_id: ts})
 
@@ -92,6 +98,7 @@ async def get_message(msg_id: str) -> Msg:
     if not data:
         raise LookupError(f"Could not find MSG_ID: {msg_id}")
     
+    ## CAST TO MSG TYPE
     msg = Msg(
         msg_id=data["msg_id"],
         sender_uid=data["sender_uid"],
@@ -133,6 +140,7 @@ async def get_routing(msg_id: str):
     log.debug("[REDIS] SUCCESS got MSG_ID: %s ROUTING: %s", msg_id, json.dumps(routing, indent=None))
     return routing
 
+## GRABS USER EVENT LOG FOR MSGs THEN RETRIEVES ALL MESSAGES IN SAID LOG AND RETURNS AN ARRAY
 async def get_messages_since(uid: str, ts: int):
     msg_ids = await r.zrangebyscore(
         f"user_msgs:{uid}",
@@ -156,6 +164,7 @@ async def get_messages_since(uid: str, ts: int):
 
     return messages
 
+## GRABS USER EVENT LOG FOR UPDATEs THEN RETRIEVES ALL UPDATES IN SAID LOG AND RETURNS AN ARRAY
 async def get_updates_since(uid: str, ts: int):
     msg_ids = await r.zrangebyscore(
         f"user_updates:{uid}",

@@ -2,12 +2,14 @@ from pydantic import BaseModel, ConfigDict
 from .msg import Msg, Update
 from enum import Enum
 
+## ENUM FOR MESSAGE TYPES
 class wsType(str, Enum):
     MSG = "msg"
     UPDATE = "update"
     ERROR = "error"
     RESPONSE = "response"
 
+## RESPONSE TYPES
 class wsError(BaseModel):
     error_type: str
     error_msg: str
@@ -18,6 +20,7 @@ class wsResponse(BaseModel):
     response_status: str
     response_body: str | dict
 
+## COMMUNICATION TYPES
 class wsMessage(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
     type: wsType

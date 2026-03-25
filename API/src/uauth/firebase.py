@@ -6,6 +6,7 @@ import logging
 
 log = logging.getLogger("uvicorn.error")
 
+## FIREBASE CONNECTION MANAGER
 def initialize_firebase():
     try:
         # Check if already initialized
@@ -32,6 +33,7 @@ def initialize_firebase():
         log.error(f"[FIREBASE] init error: {e}")
         return False
 
+## AUTH USER FUNCTION
 async def auth_user(uid: str, jwt: str) -> bool:
     if not uid or not jwt:
         return False
@@ -46,7 +48,7 @@ async def auth_user(uid: str, jwt: str) -> bool:
         log.warning("[FIREBASE] auth rejected token for UID %s: %s", uid, repr(e))
         return False
 
-
+## RETRIEVE EMAIL BY UID (CANNOT BE DONE CLIENT SIDE)
 async def get_uid_by_email(email: str) -> str | None:
     if not email:
         return None

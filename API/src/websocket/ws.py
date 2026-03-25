@@ -27,6 +27,7 @@ async def ws_endpoint(ws: WebSocket):
     await manager.connect(ws, uid) ## add connection to manager
 
     try:
+        ## MESSAGE LOOP
         while True:
             try:
                 data = await ws.receive_json()
@@ -37,6 +38,7 @@ async def ws_endpoint(ws: WebSocket):
                     payload=None
                 )
 
+                ## CASTING AND CHECKING VALIDITY
                 if message.type == wsType.MSG:
                     message.payload = Msg(**data["payload"])
                 elif message.type == wsType.UPDATE:
@@ -60,10 +62,12 @@ async def ws_endpoint(ws: WebSocket):
             log.debug("[WS] ws payload: %s", message.payload.model_dump_json(indent=2))
 
 
+            ## ROUTING BASED OFF OF MESSAGE TYPE!! SEE MODELS FOR MORE
             if message.type == wsType.MSG:
                 message.payload.msg_id = generate_id("m")
                 message.payload.status = Status.SENT
 
+                ## STORE AND SEND OK RESPONSE
                 await msgCRUD.store_message(message.payload)
                 await manager.send_to_user(uid, wsMessage(type=wsType.RESPONSE, payload=wsResponse(
                     msg_id=message.payload.msg_id, 
@@ -72,6 +76,7 @@ async def ws_endpoint(ws: WebSocket):
                 )))
 
             elif message.type == wsType.UPDATE:
+                ## CHECK IF YOU CAN UPDATE THIS MESSAGE
                 if await msgCRUD.get_msg_recipient(message.payload.msg_id) != uid: 
                     await manager.send_to_user(uid, wsMessage(type=wsType.ERROR, payload=wsError(
                         error_type="no-access", 
@@ -79,6 +84,7 @@ async def ws_endpoint(ws: WebSocket):
                     )))
                     continue
 
+                ## CALL MESSAGE UPDATE CODE
                 elif await msgCRUD.update_message_status(message.payload) == -1:
                     await manager.send_to_user(uid, wsMessage(type=wsType.ERROR, payload=wsError(
                         error_type="invalid-update", 
@@ -87,6 +93,7 @@ async def ws_endpoint(ws: WebSocket):
                     continue
                 
                 else:
+                    ## SEND SUCCESS RESPONSE
                     await manager.send_to_user(uid, wsMessage(type=wsType.UPDATE, payload=wsResponse(
                         msg_id=message.payload.msg_id,
                         response_status="success",
@@ -94,6 +101,7 @@ async def ws_endpoint(ws: WebSocket):
                     )))
 
                 
+            ## PUBLISH EVENT OF EITHER UPDATE OR MESSAGE
             log.debug("[WS] Sending REDIS event of type: %s", message.type)
             await r.publish(
                 "ws_events",

@@ -17,6 +17,8 @@ def init_manager(m: ConnectionManager):
     global manager
     manager = m
 
+## REDIS EVENT LISTENER (SEPARATE TASK); IF YOU EVER SCALE THIS, THIS IS WHAT ALLOWS THAT AS THE REDIS EVENTS ARE NOT LIMITED TO JUST THIS SERVER
+## I.E. EVENT -> REDIS SERVICE (SEPARATE) -> CYLLENIAN SERVICE (ARBITRARY)
 async def redis_listener():
     pubsub = r.pubsub()
 
@@ -26,6 +28,7 @@ async def redis_listener():
         log.debug("[REDIS-EVENT] pubsub is listening")
 
         async for data in pubsub.listen():
+            ## TRY TO CAST IGNORE OTHERWISE
             try:
                 event = RedisEvent(**json.loads(data["data"]))
             except Exception as e:
@@ -34,11 +37,13 @@ async def redis_listener():
 
             log.debug("[REDIS-EVENT] event posted %s", event.model_dump_json(indent=2))
 
+            ## SORT AND ROUTE BY TYPE
             if event.type == EventType.NEW_MESSAGE:
                 log.debug("[REDIS-EVENT] of type MSG")
                 try:
                     msg = await get_message(event.msg_id)
                     if msg: 
+                        ## SEND THE RECIPIENT WEBSOCKET
                         log.debug("[REDIS-EVENT] Sending msg to UID: %s", msg.recipient_uid)
                         await manager.send_to_user(msg.recipient_uid, wsMessage(type=wsType.MSG, payload=msg))
                 except Exception as e:
@@ -51,6 +56,7 @@ async def redis_listener():
                     update = await get_status(event.msg_id)
                     routing = await get_routing(event.msg_id)
                     
+                    ## SEND UPDATE TO BOTH SENDER AND RECIPIENT
                     await asyncio.gather(
                         manager.send_to_user(routing[0], wsMessage(type=wsType.UPDATE, payload=update)),
                         manager.send_to_user(routing[1], wsMessage(type=wsType.UPDATE, payload=update))
@@ -62,6 +68,7 @@ async def redis_listener():
             else:
                 log.error("[REDIS-EVENT] INVALID TYPE")
                 continue
+    ## HANDLE DEATH
     except Exception as e:
         log.critical("[REDIS-EVENT] FATAL LISTENER CRASH: %s", repr(e))
     finally:

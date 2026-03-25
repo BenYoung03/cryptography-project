@@ -31,6 +31,7 @@ class ConnectionManager:
             if self.connections.get(uid) == ws:
                 self.connections.pop(uid, None)
 
+    ## SEND TO USER BY UID, ERROR IF FAILED
     async def send_to_user(self, uid: str, msg: wsMessage):
         log.debug("[WS-MANAGER] sending to UID: %s, MSG:\n%s", uid, msg.model_dump_json(indent=2))
         async with self.lock: 

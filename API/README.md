@@ -1,50 +1,38 @@
 # API Documentation
-Make sure your using a python 3.12.12 virtual environment for development and installing its packages from the requirements (none so far)
-
-This document will be used to run through setting up a dev environment (doing my best!! ask me if you run into issues) - Jolyne
-
-## Poetry Setup and Management
-Please not this is only if you want to develop and probably can skip the whole version thingy. The services environment is handled in its docker file
-
-Make sure you install poetry: https://python-poetry.org/docs/
-you can install python 3.12.12 with:
-```bash
-poetry python install 3.12.12
-poetry env use 3.12.12
-```
-
-Run to activate environment:
-```bash
-source "$(poetry env info --path)/bin/activate"
-```
-**NOTE**: Not at all nessecary for development, the app will not work outside of the docker environment as we rely on redis and dockers routing to access it.
-
-Install dependencies:
-```bash
-poetry install
-```
-
-If you want to edit the dependencies make sure to run:
-```bash
-poetry add <package-name>
-poetry export -f requirements.txt --without-hashes -o requirements.txt
-```
-
-## Docker Documentation
+## Running Docker
 Docker deployment will be as simple as cloning the repo and running compose!!
 
 First install docker: https://docs.docker.com/engine/install/
+Or the windows install: https://docs.docker.com/desktop/setup/install/windows-install/
 
 If you dont want to be running sudo all the time you can follow the post install instructions to set it up differently, also see windows commands in the docs if you are on a windows machine (should be the same w/out the sudo).
 
-Compose runs and handles all the volumes, networks and services!! usually just used the compose inside the working directory when ran, but for dev we have another compose that just enables live code updates (mounts src as a volume!!), and runs the reload command on uvicorn.
+FIRST MAKE SURE YOU ARE IN THE DIRECTORY WITH THE COMPOSE FILES
+
+ALSO MAKE SURE YOU HAVE A FIREBASE SERVICE FILE!!
+
+Compose runs and handles all the volumes, networks and services!!
 ```bash
-sudo docker compose up --build
+docker compose up --build
 ```
 
 For the server you run:
 ```bash
-sudo docker compose --env-file .env.server up -d --build
+docker compose --env-file .env.server -f compose.yaml -f compose.server.yaml up --build
 ```
 
-Then just go to http://localhost/docs to see the api!! Server will be setup to handle routing with Nginx and https.
+Then just go to http://localhost/docs to see the api!!
+
+For the frontend it should auto fallback to localhost if cyllenian.jolyne.org is not up!!
+
+**NOTE**: Make sure nothing is occupying your localhost:80!!! if so please stop them from running to run this app; or run
+```bash
+docker compose -f compose.notraefik.yaml up --build
+```
+
+### Shutting Down
+Simply Ctrl+C out of the context and run
+```bash
+docker compose down
+```
+

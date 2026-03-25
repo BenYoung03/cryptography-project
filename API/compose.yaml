@@ -31,13 +31,14 @@ services:
     cyllenian:
         build: .
         container_name: cyllenian
+        ## ENVIRONMENT VARIABLES
         environment:
             - PYTHONDONTWRITEBYTECODE=1
             - GOOGLE_APPLICATION_CREDENTIALS=/run/secrets/firebase-service-account.json
             - DOMAIN=${DOMAIN}
             - LOGLEVEL=${LOGLEVEL}
         volumes:
-            - ./firebase-key.json:/run/secrets/firebase-service-account.json:ro
+            - ./firebase-key.json:/run/secrets/firebase-service-account.json:ro ## MAKE SURE KEY IS IN OG PATH (TA: USE THE ZIP FILE WILL ALREADY BE THERE)
         depends_on:
             - redis
         networks:

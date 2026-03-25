@@ -26,6 +26,7 @@ async def lifespan(app: FastAPI):
     
     try:
         yield
+    ## CLEAN UP
     finally:
         redis_task.cancel()
         for uid, ws in list(wsManager.connections.items()):
@@ -38,6 +39,7 @@ async def lifespan(app: FastAPI):
 ## app and router init
 app = FastAPI(title="Cyllenian Web Backend", lifespan=lifespan)
 
+## THIS SITS INFRONT OF EVERY SINGLE REQUEST!! THUS ANYTHING WITHOUT AUTHORIZATION WILL BE DENIED; PREVENTS PROBING ATTACKS AS ALL RESPONSES ARE THE EXACT SAME
 app.add_middleware(AuthMiddleware)
 
 app.include_router(apiRouter)
